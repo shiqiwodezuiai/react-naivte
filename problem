@@ -1,0 +1,94 @@
+import React from 'react';
+import {View, StyleSheet, Dimensions} from 'react-native';
+import {Echarts, echarts} from "react-native-secharts";
+import Orientation from 'react-native-orientation';
+
+import {_getChartWidth, mapChina} from '#/common';
+import ChartLoadingIndicator from '#/common/chartLoadingIndicator';
+import {AppServices} from '#/fetch';
+import china from './map/china.json';
+
+const getChartOption = () => {
+  return {
+    series: [{
+      type: 'map',
+      map: 'china',
+      selectedMode: 'multiple',
+      itemStyle: {
+        normal: {
+          areaColor: '#dedddd',//'#f5634a'
+          borderColor: '#cbcbcb',
+          opacity: '0.9',
+          label: {
+            show: true
+          }
+        },
+        emphasis: {
+          areaColor: '#f5734a',
+          label: {
+            show: true
+          }
+        }
+      }
+
+    }]
+  };
+};
+
+class MapBrand extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      orientation: '',
+      name: '全国',
+      mapData: {}
+    };
+    this.landscapeWith = 0;
+    this.portraitWith = 0;
+  }
+
+  componentDidMount() {
+    this._mapData();
+    Orientation.getOrientation((err, orientation) => {
+      const {width, height} = Dimensions.get('window');
+      if (orientation === 'LANDSCAPE') {
+        this.landscapeWith = width;
+        this.portraitWith = height;
+      } else {
+        this.landscapeWith = height;
+        this.portraitWith = width;
+      }
+    });
+    Orientation.addOrientationListener(this._orientationDidChange);
+  }
+
+  componentWillUnmount() {
+    Orientation.removeOrientationListener(this._orientationDidChange);
+  }
+
+  _orientationDidChange = (orientation) => {
+    this.setState({
+      orientation: orientation
+    })
+  };
+
+  _mapData() {
+    const {name} = this.state;
+    echarts.registerMap('china', china);
+  }
+
+  render() {
+    const me = this;
+    const {orientation, name, mapData} = me.state;
+    let chartWidth = _getChartWidth(orientation, me.landscapeWith, me.portraitWith);
+    return (
+      <View style={{flex: 1, width: chartWidth, height: 300}}>
+        <Echarts ref="echarts1" height={300} isMap width={chartWidth} renderLoading={() => <ChartLoadingIndicator/>}
+                 option={getChartOption()}/>
+      </View>
+    )
+  }
+}
+
+
+export default MapBrand
